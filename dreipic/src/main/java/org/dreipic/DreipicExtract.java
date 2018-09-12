@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 
 import org.dreipic.util.ByteUtils;
 
@@ -15,7 +16,7 @@ import com.google.common.base.Verify;
 import com.google.common.io.ByteStreams;
 
 public final class DreipicExtract {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (args.length != 2) {
             System.err.println("Usage: IN_FILE OUT_DIR");
             System.exit(1);
@@ -25,9 +26,15 @@ public final class DreipicExtract {
         File outDir = new File(args[1]);
         File tempFile = new File(outDir, ".tempfile");
 
+        extractFile(inFile, outDir, tempFile);
+    }
+
+    public static void extractFile(File inFile, File outDir, File tempFile) {
         try (InputStream in = new FileInputStream(inFile)) {
             DataInputStream dataIn = new DataInputStream(in);
             extract(dataIn, outDir, tempFile);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

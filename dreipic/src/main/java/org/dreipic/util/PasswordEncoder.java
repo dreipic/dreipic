@@ -31,20 +31,13 @@ public final class PasswordEncoder {
     private PasswordEncoder() {
     }
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 250; ++i) {
-            byte[] bytes = { (byte) i };
-            char[] ps = encodePassword(bytes, 32);
-            System.out.println(i + " " + new String(ps));
-        }
-    }
-
-    public static char[] encodePassword(byte[] bytes, int len) {
+    public static char[] encodePassword(byte[] bytes) {
         Preconditions.checkNotNull(bytes);
         Preconditions.checkArgument(bytes.length > 0);
 
         byte[] hash = passwordToHash(bytes);
 
+        final int len = 32;
         char[] res = new char[len];
 
         List<String> groups = new ArrayList<>();

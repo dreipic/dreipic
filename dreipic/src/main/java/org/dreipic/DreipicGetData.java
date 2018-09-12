@@ -129,7 +129,7 @@ public final class DreipicGetData {
                 List<String> blockIds = new ArrayList<>();
 
                 for (int i = 0; i < data.blocks.size(); ++i) {
-                    byte[] blockId = DreipicListDatas.getBlockId(meta.storageId, data.hash, i);
+                    byte[] blockId = DecryptUtils.getBlockId(meta.storageId, data.hash, i);
                     String blockIdStr = DatatypeConverter.printHexBinary(blockId);
                     blockIdStr = blockIdStr.substring(2);
                     String oldHash = blockMap.put(blockIdStr, hash);

@@ -30,21 +30,21 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
-final class SwingUtils {
+public final class SwingUtils {
     private SwingUtils() {
     }
 
-    static void setShowCharacters(JPasswordField field, boolean show) {
+    public static void setShowCharacters(JPasswordField field, boolean show) {
         char c = show ? 0 : (Character)UIManager.getDefaults().get("PasswordField.echoChar");
         field.setEchoChar(c);
     }
 
-    static void copyToClipboard(String str) {
+    public static void copyToClipboard(String str) {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(new StringSelection(str), null);
     }
 
-    static String copyFromClipboard() {
+    public static String copyFromClipboard() {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         String data;
         try {
@@ -55,14 +55,14 @@ final class SwingUtils {
         return data;
     }
 
-    static JMenuItem addMenuItem(JPopupMenu menu, String title, Runnable listener) {
+    public static JMenuItem addMenuItem(JPopupMenu menu, String title, Runnable listener) {
         JMenuItem item = new JMenuItem(title);
         item.addActionListener(__ -> listener.run());
         menu.add(item);
         return item;
     }
 
-    static JButton newButton(String title, boolean enabled, boolean focusable, Runnable listener) {
+    public static JButton newButton(String title, boolean enabled, boolean focusable, Runnable listener) {
         JButton button = new JButton(title);
         button.setEnabled(enabled);
         button.setFocusable(focusable);
@@ -70,14 +70,14 @@ final class SwingUtils {
         return button;
     }
 
-    static JToggleButton newToggleButton(String title, boolean focusable, Consumer<Boolean> listener) {
+    public static JToggleButton newToggleButton(String title, boolean focusable, Consumer<Boolean> listener) {
         JToggleButton button = new JToggleButton(title);
         button.setFocusable(focusable);
         button.addActionListener(__ -> listener.accept(button.isSelected()));
         return button;
     }
 
-    static void onWindowClosed(Window window, Runnable listener) {
+    public static void onWindowClosed(Window window, Runnable listener) {
         window.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
@@ -86,7 +86,7 @@ final class SwingUtils {
         });
     }
 
-    static void onMouseClicked(Component c, Consumer<MouseEvent> listener) {
+    public static void onMouseClicked(Component c, Consumer<MouseEvent> listener) {
         c.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -95,7 +95,7 @@ final class SwingUtils {
         });
     }
 
-    static void onMouseEnter(Component c, Consumer<MouseEvent> listener) {
+    public static void onMouseEnter(Component c, Consumer<MouseEvent> listener) {
         c.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -104,7 +104,7 @@ final class SwingUtils {
         });
     }
 
-    static void onMouseExit(Component c, Consumer<MouseEvent> listener) {
+    public static void onMouseExit(Component c, Consumer<MouseEvent> listener) {
         c.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseExited(MouseEvent e) {
@@ -113,7 +113,16 @@ final class SwingUtils {
         });
     }
 
-    static void onFocusLost(Component c, Consumer<FocusEvent> listener) {
+    public static void onFocusGained(Component c, Consumer<FocusEvent> listener) {
+        c.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                listener.accept(e);
+            }
+        });
+    }
+
+    public static void onFocusLost(Component c, Consumer<FocusEvent> listener) {
         c.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
@@ -122,7 +131,7 @@ final class SwingUtils {
         });
     }
 
-    static void onTextChanged(JTextComponent c, Runnable listener) {
+    public static void onTextChanged(JTextComponent c, Runnable listener) {
         c.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void removeUpdate(DocumentEvent e) {
@@ -141,7 +150,7 @@ final class SwingUtils {
         });
     }
 
-    static JFrame createFrame(String title, boolean pack, JComponent component) {
+    public static JFrame createFrame(String title, boolean pack, JComponent component) {
         JFrame frame = newFrame0(title, component);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -153,7 +162,7 @@ final class SwingUtils {
         return frame;
     }
 
-    static JFrame newFrame0(String title, JComponent body) {
+    public static JFrame newFrame0(String title, JComponent body) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(body, BorderLayout.CENTER);
         JFrame frame = new JFrame(title);

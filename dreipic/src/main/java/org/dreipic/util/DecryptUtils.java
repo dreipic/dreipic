@@ -1,6 +1,8 @@
 package org.dreipic.util;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -20,6 +22,7 @@ import javax.crypto.spec.SecretKeySpec;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.io.ByteStreams;
+import com.google.common.primitives.Bytes;
 
 public final class DecryptUtils {
     public static final int DECRYPT_SIGN = 0x1AFC72E7;
@@ -49,7 +52,7 @@ public final class DecryptUtils {
             return false;
         }
 
-        byte[] data = decryptData(key, dataIn);
+        byte[] data = decryptDataSub(key, dataIn);
 
         DataOutputStream dataOut = new DataOutputStream(out);
         dataOut.writeInt(DECRYPT_SIGN);
@@ -59,7 +62,35 @@ public final class DecryptUtils {
         return true;
     }
 
-    private static byte[] decryptData(byte[] key, InputStream in) throws IOException {
+    public static byte[] decryptData(byte[] key, byte[] inData) {
+        Preconditions.checkNotNull(key);
+        Preconditions.checkNotNull(inData);
+
+        InputStream in = new ByteArrayInputStream(inData);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            decryptData0(key, in, out);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        byte[] outData = out.toByteArray();
+        return outData;
+    }
+
+    private static void decryptData0(byte[] key, InputStream in, OutputStream out) throws IOException {
+        DataInputStream dataIn = new DataInputStream(in);
+        int sign = dataIn.readInt();
+
+        byte[] data = decryptDataSub(key, dataIn);
+
+        DataOutputStream dataOut = new DataOutputStream(out);
+        dataOut.writeInt(sign);
+        dataOut.write(data);
+    }
+
+    private static byte[] decryptDataSub(byte[] key, InputStream in) throws IOException {
         byte[] salt = new byte[32];
         ByteStreams.readFully(in, salt);
 
@@ -147,5 +178,15 @@ public final class DecryptUtils {
     private static byte[] readAll(InputStream in) throws IOException {
         byte[] res = ByteStreams.toByteArray(in);
         return res;
+    }
+
+    public static byte[] getBlockId(byte[] storageId, byte[] dataHash, int blockIdx) {
+        byte[] baseHash = DigestUtils.sha256(Bytes.concat(storageId, dataHash));
+
+        byte[] idxBytes = ByteUtils.longToBytes(blockIdx);
+        byte[] hash = DigestUtils.sha256(Bytes.concat(baseHash, idxBytes));
+
+        byte[] blockId = Arrays.copyOf(hash, 20);
+        return blockId;
     }
 }

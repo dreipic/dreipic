@@ -53,6 +53,7 @@ public final class MnemonicKeyPanel {
             f.setComponentPopupMenu(popupMenu);
 
             SwingUtils.onTextChanged(f, this::updateStatus);
+            SwingUtils.onFocusGained(f, __ -> f.selectAll());
             SwingUtils.onFocusLost(f, __ -> updateStatus());
             SwingUtils.onMouseEnter(f, __ -> onMouseEnter(f));
             SwingUtils.onMouseExit(f, __ -> onMouseExit(f));

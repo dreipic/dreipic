@@ -175,7 +175,7 @@ public final class DreipicKeyTool {
     private void onCopyPasswordClick() {
         byte[] fullBytes = getFullBytes();
         if (fullBytes != null) {
-            char[] cs = PasswordEncoder.encodePassword(fullBytes, 32);
+            char[] cs = PasswordEncoder.encodePassword(fullBytes);
             String s = new String(cs);
             copyToClipboard(s);
         }
