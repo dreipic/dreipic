@@ -40,6 +40,7 @@ final class ExplorerDownload {
             StructMetaPath path,
             StructMetaData data,
             File dstDir,
+            boolean extract,
             LogPanel log)
     {
         String fileName = pathName(path.path);
@@ -59,7 +60,7 @@ final class ExplorerDownload {
 
             log.log("File downloaded");
 
-            if (path.type == StructPathType.ARCHIVE) {
+            if (path.type == StructPathType.ARCHIVE && extract) {
                 Preconditions.checkState(dstFile.mkdir(), "Failed to create directory: [%s]", dstFile);
                 DreipicExtract.extractFile(downloadTempFile, dstFile, archiveTempFile);
                 log.log("Archive extracted");

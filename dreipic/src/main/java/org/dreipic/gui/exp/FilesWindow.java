@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -44,6 +45,7 @@ final class FilesWindow {
     private final DefaultListModel<PathWrapper> versionsModel;
     private final JList<PathWrapper> lstVersions;
     private final JTextField txtDstDir;
+    private final JCheckBox chkExtract;
     private final JButton btnDownload;
     private final LogPanel logPanel;
 
@@ -83,6 +85,9 @@ final class FilesWindow {
         txtDstDir = new JTextField();
         SwingUtils.onTextChanged(txtDstDir, this::onDstPathChange);
 
+        chkExtract = new JCheckBox("Extract");
+        chkExtract.setSelected(true);
+
         btnDownload = SwingUtils.newButton("Download", false, true, this::onDownloadClick);
 
         JPanel listsPanel = new JPanel(new BorderLayout());
@@ -92,6 +97,7 @@ final class FilesWindow {
         JPanel dlPanel = new JPanel();
         dlPanel.setLayout(new BoxLayout(dlPanel, BoxLayout.X_AXIS));
         dlPanel.add(txtDstDir);
+        dlPanel.add(chkExtract);
         dlPanel.add(btnDownload);
 
         logPanel = new LogPanel(10);
@@ -143,10 +149,19 @@ final class FilesWindow {
             return -Long.compare(t1, t2);
         });
 
+        List<PathWrapper> wrappers = new ArrayList<>();
+
         for (StructMetaPath metaPath : paths) {
             String hashStr = DatatypeConverter.printHexBinary(metaPath.hash);
             DataRec dataRec = dataMap.get(hashStr);
             PathWrapper wrapper = new PathWrapper(dataRec == null ? null : dataRec.meta, metaPath, dataRec == null ? null : dataRec.data);
+            wrappers.add(wrapper);
+        }
+
+        Collections.sort(wrappers);
+        Collections.reverse(wrappers);
+
+        for (PathWrapper wrapper : wrappers) {
             versionsModel.addElement(wrapper);
         }
 
@@ -170,8 +185,9 @@ final class FilesWindow {
         }
 
         File dstDir = new File(txtDstDir.getText());
+        boolean extract = chkExtract.isSelected();
 
-        Thread thread = new Thread(() -> download(wrapper, dstDir));
+        Thread thread = new Thread(() -> download(wrapper, dstDir, extract));
         thread.setName("Download");
         thread.setDaemon(true);
         thread.start();
@@ -180,10 +196,10 @@ final class FilesWindow {
         downloading = true;
     }
 
-    private void download(PathWrapper wrapper, File dstDir) {
+    private void download(PathWrapper wrapper, File dstDir, boolean extract) {
         try {
             logPanel.clear();
-            ExplorerDownload.download(creds, dataKey, wrapper.meta, wrapper.path, wrapper.data, dstDir, logPanel);
+            ExplorerDownload.download(creds, dataKey, wrapper.meta, wrapper.path, wrapper.data, dstDir, extract, logPanel);
         } catch (Throwable e) {
             String s = Throwables.getStackTraceAsString(e);
             logPanel.log("ERROR: %s", s);
@@ -222,6 +238,12 @@ final class FilesWindow {
         btnDownload.setEnabled(!downloading && wrapper != null && wrapper.data != null && file.isDirectory());
     }
 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            FilesWindow.show(null, null, Collections.emptyList());
+        });
+    }
+
     private static final class DataRec {
         final StructMeta meta;
         final StructMetaData data;
@@ -232,7 +254,7 @@ final class FilesWindow {
         }
     }
 
-    private static final class PathWrapper {
+    private static final class PathWrapper implements Comparable<PathWrapper> {
         final StructMeta meta;
         final StructMetaPath path;
         final StructMetaData data;
@@ -244,8 +266,15 @@ final class FilesWindow {
         }
 
         @Override
+        public int compareTo(PathWrapper o) {
+            long t1 = meta == null ? 0 : meta.timestamp;
+            long t2 = o.meta == null ? 0 : o.meta.timestamp;
+            return Long.compare(t1, t2);
+        }
+
+        @Override
         public String toString() {
-            Date date = new Date(path.time == null ? 0 : path.time);
+            Date date = new Date(meta == null ? 0 : meta.timestamp);
             String sizeStr = data == null ? "<missing>" : String.format("%,d", data.size);
             return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS").format(date) + " " + path.type + " " + sizeStr;
         }
