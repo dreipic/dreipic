@@ -142,6 +142,52 @@ public final class MnemonicEncoder {
         return key;
     }
 
+    public static String[] intsToWords(int[] nums) {
+        String[] words = new String[nums.length];
+        for (int i = 0; i < nums.length; ++i) words[i] = intToWord(nums[i]);
+        return words;
+    }
+
+    public static String intToWord(int num) {
+        return Initializer.WORD_LIST.get(num);
+    }
+
+    public static byte[] encodeRaw(int[] nums) {
+        Preconditions.checkNotNull(nums);
+        int[] numsCopy = nums.clone();
+
+        final int wordBits = 11;
+        Preconditions.checkState(Initializer.WORD_LIST.size() == (1 << wordBits));
+
+        for (int num : numsCopy) {
+            Preconditions.checkArgument(num >= 0 && num < (1 << wordBits));
+        }
+
+        int totalBits = numsCopy.length * wordBits;
+        int totalBytes = (totalBits + 7) / 8;
+        byte[] bytes = new byte[totalBytes];
+
+        for (int bit = 0; bit < totalBits; ++bit) {
+            int wordOfs = bit / wordBits;
+            int wordBit = wordBits - 1 - bit % wordBits;
+            int v = (numsCopy[wordOfs] >>> wordBit) & 1;
+            int byteOfs = bit / 8;
+            int byteBit = 8 - 1 - bit % 8;
+            bytes[byteOfs] |= (v << byteBit);
+        }
+
+        return bytes;
+    }
+
+    public static byte[] v2Checksum(byte[] bytes) {
+        byte[] not = bytes.clone();
+        for (int i = 0; i < not.length; ++i) {
+            not[i] = (byte) ~(not[i] & 0xFF);
+        }
+        byte[] checksum = DigestUtils.sha256(not);
+        return checksum;
+    }
+
     private static void bytesToBits(byte[] bytes, int srcOfs, int srcLen, byte[] bits, int dstOfs) {
         Preconditions.checkArgument(srcOfs >= 0);
         Preconditions.checkArgument(srcLen >= 0);

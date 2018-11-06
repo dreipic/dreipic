@@ -56,4 +56,18 @@ public final class ByteUtils {
         String s = new String(bs, Charsets.UTF_8);
         return s;
     }
+
+    public static byte[] concat(byte[] a, byte[] b) {
+        if (a.length == 0) {
+            return b;
+        } else if (b.length == 0) {
+            return a;
+        }
+
+        byte[] res = new byte[a.length + b.length];
+        System.arraycopy(a, 0, res, 0, a.length);
+        System.arraycopy(b, 0, res, a.length, b.length);
+
+        return res;
+    }
 }

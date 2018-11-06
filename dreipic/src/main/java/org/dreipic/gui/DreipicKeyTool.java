@@ -128,10 +128,15 @@ public final class DreipicKeyTool {
     }
 
     private void onCopyWordsClick() {
+        List<String> words = keyPanel.getWords();
+
+        String str = wordsToString(words);
+        copyToClipboard(str);
+    }
+
+    static String wordsToString(List<String> words) {
         StringBuilder buf = new StringBuilder();
         String sep = "";
-
-        List<String> words = keyPanel.getWords();
 
         for (int i = 0; i < words.size(); ++i) {
             String s = words.get(i);
@@ -148,7 +153,7 @@ public final class DreipicKeyTool {
         }
 
         String str = buf.toString();
-        copyToClipboard(str);
+        return str;
     }
 
     private byte[] getExtraBytes() {
