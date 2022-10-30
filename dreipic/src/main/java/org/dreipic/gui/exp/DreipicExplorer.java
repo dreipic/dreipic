@@ -8,10 +8,11 @@ public final class DreipicExplorer {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            ConnectDetails connect = ConnectWindow.show();
-            if (connect != null) {
-                FilesWindow.show(connect.credentials, connect.dataKey, connect.metas);
-            }
+            ConnectWindow.show(connect -> {
+                if (connect != null) {
+                    FilesWindow.show(connect.credentials, connect.dataKey, connect.metas);
+                }
+            });
         });
     }
 }

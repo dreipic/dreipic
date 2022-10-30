@@ -2,16 +2,19 @@ package org.dreipic.gui.exp;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -26,7 +29,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 
 final class ConnectWindow {
-    private final JDialog dialog;
+    private final JFrame frame;
     private final CredentialsPanel credPanel;
     private final MnemonicKeyPanel dataKeyPanel;
     private final JButton btnOK;
@@ -36,7 +39,7 @@ final class ConnectWindow {
 
     private ConnectDetails result;
 
-    private ConnectWindow() {
+    private ConnectWindow(Consumer<ConnectDetails> callback) {
         credPanel = new CredentialsPanel(this::onStateChange);
         dataKeyPanel = new MnemonicKeyPanel(this::onStateChange);
         btnOK = SwingUtils.newButton("OK", false, true, this::onConnectClick);
@@ -62,14 +65,20 @@ final class ConnectWindow {
         panel.add(centerPanel, BorderLayout.CENTER);
         panel.add(btnOK, BorderLayout.SOUTH);
 
-        dialog = new JDialog();
-        dialog.setTitle("Connect");
-        dialog.setModal(true);
-        dialog.setContentPane(panel);
-        dialog.pack();
-        dialog.setLocationRelativeTo(null);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        dialog.setVisible(true);
+        frame = new JFrame();
+        frame.setTitle("Connect");
+        frame.setContentPane(panel);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                callback.accept(result);
+            }
+        });
     }
 
     private void onStateChange() {
@@ -104,10 +113,13 @@ final class ConnectWindow {
                 List<Long> txs = listTransactions(ftp);
                 logPanel.log("Transactions: %d", txs.size());
 
+                int i = 0;
+                int n = txs.size();
                 for (long tx : txs) {
-                    StructMeta meta = downloadMeta(ftp, dataKey, tx);
+                    StructMeta meta = downloadMeta(ftp, dataKey, tx, i, n);
                     metas.add(meta);
-                    logPanel.log("Decrypted tx: %d", tx);
+                    logPanel.log("Decrypted tx [%d/%d]: %d", i, n, tx);
+                    ++i;
                 }
             });
         } catch (Throwable e) {
@@ -122,14 +134,14 @@ final class ConnectWindow {
 
         SwingUtilities.invokeLater(() -> {
             result = new ConnectDetails(creds, dataKey, metas);
-            dialog.dispose();
+            frame.dispose();
         });
     }
 
-    private StructMeta downloadMeta(FTPClient ftp, byte[] dataKey, long tx) {
+    private StructMeta downloadMeta(FTPClient ftp, byte[] dataKey, long tx, int i, int n) {
         String path = "/meta/" + tx;
         byte[] rawData = FtpConnector.download(ftp, path);
-        logPanel.log("Loaded tx: %d (%,d bytes)", tx, rawData.length);
+        logPanel.log("Loaded tx [%d/%d]: %d (%,d bytes)", i, n, tx, rawData.length);
 
         byte[] data = DecryptUtils.decryptData(dataKey, rawData);
         InputStream in = new ByteArrayInputStream(data);
@@ -154,8 +166,7 @@ final class ConnectWindow {
         return txs;
     }
 
-    static ConnectDetails show() {
-        ConnectWindow window = new ConnectWindow();
-        return window.result;
+    static void show(Consumer<ConnectDetails> callback) {
+        new ConnectWindow(callback);
     }
 }
